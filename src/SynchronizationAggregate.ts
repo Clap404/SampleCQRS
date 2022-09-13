@@ -20,26 +20,33 @@ export class ShopDataAlreadyReceivedEvent extends Event {
 export class BadShopIdDataReceivedEvent extends Event {
 }
 
+type ShopId = string;
+
+enum RequestState {
+    Requested,
+    Received,
+}
+
 export class SynchronizationAggregate {
 
-    private state: {
-        shopsBeingRequested: string[],
-        shopsDataReceived: string[],
-    } = {shopsBeingRequested: [], shopsDataReceived: []}
+    private shopId: ShopId;
 
-    constructor(history?) {
+    state = {
+        requestState: null
+    };
+
+    constructor(shopId: ShopId, history?) {
+        this.shopId = shopId;
         history?.forEach(el => this.apply(el));
     }
 
     apply(event: Event) {
         switch (event.constructor.name) {
             case "ShopDataRequestedEvent" :
-                this.state.shopsBeingRequested.push(event.shopId);
+                this.state.requestState = RequestState.Requested;
                 break;
             case "ShopDataReceivedEvent" :
-                const shopIndex = this.state.shopsBeingRequested.findIndex((el) => el === event.shopId);
-                this.state.shopsBeingRequested.splice(shopIndex, 1);
-                this.state.shopsDataReceived.push(event.shopId);
+                this.state.requestState = RequestState.Received;
                 break;
             case "BadShopIdDataReceivedEvent" :
                 break;
@@ -58,12 +65,12 @@ export class SynchronizationAggregate {
     receiveData(shopData: ShopData): any {
         console.log(`Command : receiveData for ${shopData.shopId}`)
         let event: Event;
-        if (this.state.shopsBeingRequested.indexOf(shopData.shopId) >= 0) {
-            event = new ShopDataReceivedEvent(shopData.shopId);
-        } else if (this.state.shopsDataReceived.indexOf(shopData.shopId) >= 0) {
-            event = new ShopDataAlreadyReceivedEvent(shopData.shopId);
-        } else {
+        if (shopData.shopId !== this.shopId) {
             event = new BadShopIdDataReceivedEvent(shopData.shopId);
+        } else if (this.state.requestState === RequestState.Requested) {
+            event = new ShopDataReceivedEvent(shopData.shopId);
+        } else if (this.state.requestState === RequestState.Received) {
+            event = new ShopDataAlreadyReceivedEvent(shopData.shopId);
         }
         this.apply(event);
         return event;

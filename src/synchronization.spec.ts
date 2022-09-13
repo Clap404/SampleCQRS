@@ -8,9 +8,9 @@ import {
 
 describe('synchronisation', () => {
     it('should raise DataIsRequested when request data', () => {
-        const synchronization: SynchronizationAggregate = new SynchronizationAggregate();
-
         const shopId = "nbouerf";
+
+        const synchronization: SynchronizationAggregate = new SynchronizationAggregate(shopId);
 
         const event = synchronization.requestData(shopId);
 
@@ -25,7 +25,7 @@ describe('synchronisation', () => {
 
         const history = [new ShopDataRequestedEvent(shopData.shopId)];
 
-        const synchronization: SynchronizationAggregate = new SynchronizationAggregate(history);
+        const synchronization: SynchronizationAggregate = new SynchronizationAggregate(shopData.shopId, history);
 
         const event = synchronization.receiveData(shopData);
 
@@ -33,14 +33,14 @@ describe('synchronisation', () => {
     });
 
     it("should raise BadShopDataReceived when receive data from wrong shop id", () => {
-        const synchronization: SynchronizationAggregate = new SynchronizationAggregate();
-
-        synchronization.requestData("rightShopId");
+        const shopId = "rightShopId"
 
         const shopData = {
             shopId : "wrongShopId",
             contents : "ZeData"
         } ;
+
+        const synchronization: SynchronizationAggregate = new SynchronizationAggregate(shopId);
 
         const event = synchronization.receiveData(shopData);
 
@@ -55,7 +55,7 @@ describe('synchronisation', () => {
 
         const history = [new ShopDataRequestedEvent(shopData.shopId), new ShopDataReceivedEvent(shopData.shopId)];
 
-        const synchronization: SynchronizationAggregate = new SynchronizationAggregate(history);
+        const synchronization: SynchronizationAggregate = new SynchronizationAggregate(shopData.shopId, history);
 
         const event = synchronization.receiveData(shopData);
 
