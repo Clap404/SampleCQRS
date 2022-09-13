@@ -22,14 +22,12 @@ export class BadShopIdDataReceivedEvent extends Event {
 
 export class SynchronizationAggregate {
 
-    history: Event[];
-    state: {
+    private state: {
         shopsBeingRequested: string[],
         shopsDataReceived: string[],
     } = {shopsBeingRequested: [], shopsDataReceived: []}
 
     constructor(history?) {
-        this.history = history || [];
         history?.forEach(el => this.apply(el));
     }
 
@@ -53,7 +51,6 @@ export class SynchronizationAggregate {
     requestData(shopId: string): ShopDataRequestedEvent {
         console.log(`Command : requestData for ${shopId}`)
         const event = new ShopDataRequestedEvent(shopId);
-        this.history.push(event);
         this.apply(event)
         return event;
     }
@@ -68,7 +65,6 @@ export class SynchronizationAggregate {
         } else {
             event = new BadShopIdDataReceivedEvent(shopData.shopId);
         }
-        this.history.push(event);
         this.apply(event);
         return event;
     }
