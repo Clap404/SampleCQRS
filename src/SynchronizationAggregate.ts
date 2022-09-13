@@ -1,4 +1,4 @@
-export abstract class Event {
+export abstract class DomainEvent {
     constructor(shopId: string) {
         this.shopId = shopId;
     }
@@ -6,16 +6,16 @@ export abstract class Event {
     shopId: string;
 }
 
-export class ShopDataReceivedEvent extends Event {
+export class ShopDataReceivedEvent extends DomainEvent {
 }
 
-export class ShopDataRequestedEvent extends Event {
+export class ShopDataRequestedEvent extends DomainEvent {
 }
 
-export class ShopDataAlreadyReceivedEvent extends Event {
+export class ShopDataAlreadyReceivedEvent extends DomainEvent {
 }
 
-export class BadShopIdDataReceivedEvent extends Event {
+export class BadShopIdDataReceivedEvent extends DomainEvent {
 }
 
 type ShopId = string;
@@ -38,7 +38,7 @@ export class SynchronizationAggregate {
         history?.forEach(el => this.apply(el));
     }
 
-    apply(event: Event) {
+    apply(event: DomainEvent) {
         switch (event.constructor.name) {
             case "ShopDataRequestedEvent" :
                 this.state.requestState = RequestState.Requested;
@@ -62,7 +62,7 @@ export class SynchronizationAggregate {
 
     receiveData(shopData: ShopData): any {
         console.log(`Command : receiveData for ${shopData.shopId}`)
-        let event: Event;
+        let event: DomainEvent;
         if (shopData.shopId !== this.shopId) {
             event = new BadShopIdDataReceivedEvent(shopData.shopId);
         } else if (this.state.requestState === RequestState.Requested) {
