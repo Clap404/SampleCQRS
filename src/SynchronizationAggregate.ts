@@ -11,7 +11,10 @@ export abstract class Event {
 export class ShopDataReceivedEvent extends Event {
 }
 
-export class DataIsRequestedEvent extends Event {
+export class ShopDataRequestedEvent extends Event {
+}
+
+export class ShopDataAlreadyReceivedEvent extends Event {
 }
 
 export class BadShopIdDataReceivedEvent extends Event {
@@ -22,7 +25,8 @@ export class SynchronizationAggregate {
     history: Event[];
     state: {
         shopsBeingRequested: string[],
-    } = {shopsBeingRequested: []}
+        shopsDataReceived: string[],
+    } = {shopsBeingRequested: [], shopsDataReceived: []}
 
     constructor(history?) {
         this.history = history || [];
@@ -31,21 +35,24 @@ export class SynchronizationAggregate {
 
     apply(event: Event) {
         switch (event.constructor.name) {
-            case "DataIsRequestedEvent" :
+            case "ShopDataRequestedEvent" :
                 this.state.shopsBeingRequested.push(event.shopId);
                 break;
             case "ShopDataReceivedEvent" :
                 const shopIndex = this.state.shopsBeingRequested.findIndex((el) => el === event.shopId);
                 this.state.shopsBeingRequested.splice(shopIndex, 1);
+                this.state.shopsDataReceived.push(event.shopId);
                 break;
             case "BadShopIdDataReceivedEvent" :
+                break;
+            case "ShopDataAlreadyReceivedEvent" :
                 break;
         }
     }
 
-    requestData(shopId: string): DataIsRequestedEvent {
+    requestData(shopId: string): ShopDataRequestedEvent {
         console.log(`Command : requestData for ${shopId}`)
-        const event = new DataIsRequestedEvent(shopId);
+        const event = new ShopDataRequestedEvent(shopId);
         this.history.push(event);
         this.apply(event)
         return event;
@@ -53,10 +60,11 @@ export class SynchronizationAggregate {
 
     receiveData(shopData: ShopData): any {
         console.log(`Command : receiveData for ${shopData.shopId}`)
-        const shopIndex = this.state.shopsBeingRequested.findIndex((el) => el === shopData.shopId);
         let event: Event;
-        if (shopIndex >= 0) {
+        if (this.state.shopsBeingRequested.indexOf(shopData.shopId) >= 0) {
             event = new ShopDataReceivedEvent(shopData.shopId);
+        } else if (this.state.shopsDataReceived.indexOf(shopData.shopId) >= 0) {
+            event = new ShopDataAlreadyReceivedEvent(shopData.shopId);
         } else {
             event = new BadShopIdDataReceivedEvent(shopData.shopId);
         }

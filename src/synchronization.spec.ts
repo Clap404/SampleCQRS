@@ -1,9 +1,9 @@
 import {
     BadShopIdDataReceivedEvent,
-    DataIsRequestedEvent,
+    ShopDataRequestedEvent,
     ShopData,
     ShopDataReceivedEvent,
-    SynchronizationAggregate
+    SynchronizationAggregate, ShopDataAlreadyReceivedEvent
 } from "./SynchronizationAggregate";
 
 describe('synchronisation', () => {
@@ -14,7 +14,7 @@ describe('synchronisation', () => {
 
         const event = synchronization.requestData(shopId);
 
-        expect(event).toBeInstanceOf(DataIsRequestedEvent);
+        expect(event).toBeInstanceOf(ShopDataRequestedEvent);
     });
 
     it('should raise ShopDataReceived when receive data with the goOod shopId', () => {
@@ -23,7 +23,7 @@ describe('synchronisation', () => {
             contents : "ZeData"
         } ;
 
-        const history = [new DataIsRequestedEvent(shopData.shopId)];
+        const history = [new ShopDataRequestedEvent(shopData.shopId)];
 
         const synchronization: SynchronizationAggregate = new SynchronizationAggregate(history);
 
@@ -48,6 +48,17 @@ describe('synchronisation', () => {
     })
 
     it("should raise DataAlreadyReceived when receive data already received", () => {
+        const shopData = {
+            shopId : "nbouerf",
+            contents : "ZeData"
+        } ;
 
+        const history = [new ShopDataRequestedEvent(shopData.shopId), new ShopDataReceivedEvent(shopData.shopId)];
+
+        const synchronization: SynchronizationAggregate = new SynchronizationAggregate(history);
+
+        const event = synchronization.receiveData(shopData);
+
+        expect(event).toBeInstanceOf(ShopDataAlreadyReceivedEvent);
     })
 });
