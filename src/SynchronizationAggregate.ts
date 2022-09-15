@@ -27,6 +27,15 @@ export class ShopUrlUpdatedEvent extends DomainEvent {
     url : string;
 }
 
+export class ShopNameUpdatedEvent extends DomainEvent {
+    constructor(shopId: ShopId, name: string) {
+        super(shopId);
+        this.name = name;
+    }
+
+    name : string;
+}
+
 enum RequestState {
     Requested,
     Received,

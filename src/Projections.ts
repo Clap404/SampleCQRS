@@ -1,4 +1,4 @@
-import {ShopId, ShopUrlUpdatedEvent} from "./SynchronizationAggregate";
+import {ShopId, ShopNameUpdatedEvent, ShopUrlUpdatedEvent} from "./SynchronizationAggregate";
 
 export class ShopAdminRepository {
     shopAdminProjectionRepository: {
@@ -27,6 +27,10 @@ export class ShopAdminHandler {
 
     handleUrlUpdatedEvent(shopUrlUpdatedEvent: ShopUrlUpdatedEvent) {
         this.shopAdminRepo.set(shopUrlUpdatedEvent.shopId, {url: shopUrlUpdatedEvent.url})
+    }
+
+    handleNameUpdatedEvent(shopUrlUpdatedEvent: ShopNameUpdatedEvent) {
+        this.shopAdminRepo.set(shopUrlUpdatedEvent.shopId, {name: shopUrlUpdatedEvent.name})
     }
 }
 
