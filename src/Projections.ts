@@ -1,4 +1,8 @@
-import {ShopId, ShopNameUpdatedEvent, ShopUrlUpdatedEvent} from "./SynchronizationAggregate";
+import {DomainEvent, ShopId, ShopNameUpdatedEvent, ShopUrlUpdatedEvent} from "./SynchronizationAggregate";
+
+export interface Handler {
+    handleEvent(event: DomainEvent);
+}
 
 export class ShopAdminRepository {
     shopAdminProjectionRepository: {
@@ -17,12 +21,20 @@ export class ShopAdminRepository {
     }
 }
 
-export class ShopAdminHandler {
+export class ShopAdminHandler implements Handler{
     shopAdminRepo: ShopAdminRepository
 
     // # DependencyInjectionLife
     constructor(shopAdminRepo: ShopAdminRepository) {
         this.shopAdminRepo = shopAdminRepo
+    }
+
+    handleEvent(event: DomainEvent) {
+        if(event instanceof ShopUrlUpdatedEvent) {
+            this.handleUrlUpdatedEvent(event)
+        } else if(event instanceof ShopNameUpdatedEvent) {
+            this.handleNameUpdatedEvent(event)
+        }
     }
 
     handleUrlUpdatedEvent(shopUrlUpdatedEvent: ShopUrlUpdatedEvent) {

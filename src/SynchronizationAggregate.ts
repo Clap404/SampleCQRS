@@ -1,3 +1,5 @@
+import {PubSub} from "./PubSub";
+
 export abstract class DomainEvent {
     constructor(shopId: ShopId) {
         this.shopId = shopId;
@@ -24,7 +26,7 @@ export class ShopUrlUpdatedEvent extends DomainEvent {
         this.url = url;
     }
 
-    url : string;
+    url: string;
 }
 
 export class ShopNameUpdatedEvent extends DomainEvent {
@@ -33,7 +35,7 @@ export class ShopNameUpdatedEvent extends DomainEvent {
         this.name = name;
     }
 
-    name : string;
+    name: string;
 }
 
 enum RequestState {
@@ -43,14 +45,11 @@ enum RequestState {
 
 export class SynchronizationAggregate {
 
-    private shopId: ShopId;
-
     state = {
         requestState: null
     };
 
-    constructor(shopId: ShopId, history?) {
-        this.shopId = shopId;
+    constructor(private shopId: ShopId, history?) {
         history?.forEach(el => this.apply(el));
     }
 
@@ -86,6 +85,13 @@ export class SynchronizationAggregate {
         } else if (this.state.requestState === RequestState.Received) {
             event = new ShopDataAlreadyReceivedEvent(shopData.shopId);
         }
+        this.apply(event);
+        return event;
+    }
+
+    updateUrl(shopId: ShopId, url: string): any {
+        console.log(`Command : updateUrl for ${shopId}`)
+        const event = new ShopUrlUpdatedEvent(shopId, url);
         this.apply(event);
         return event;
     }
