@@ -1,9 +1,9 @@
 export abstract class DomainEvent {
-    constructor(shopId: string) {
+    constructor(shopId: ShopId) {
         this.shopId = shopId;
     }
 
-    shopId: string;
+    shopId: ShopId;
 }
 
 export class ShopDataReceivedEvent extends DomainEvent {
@@ -18,7 +18,14 @@ export class ShopDataAlreadyReceivedEvent extends DomainEvent {
 export class BadShopIdDataReceivedEvent extends DomainEvent {
 }
 
-type ShopId = string;
+export class ShopUrlUpdatedEvent extends DomainEvent {
+    constructor(shopId: ShopId, url: string) {
+        super(shopId);
+        this.url = url;
+    }
+
+    url : string;
+}
 
 enum RequestState {
     Requested,
@@ -76,6 +83,8 @@ export class SynchronizationAggregate {
 }
 
 // DTOs
+
+export type ShopId = string;
 
 export class ShopData {
     shopId: string;
