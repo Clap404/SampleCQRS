@@ -1,6 +1,6 @@
 import {PubSub} from "./PubSub";
 
-export abstract class DomainEvent {
+export abstract class DomainEvent{
     constructor(shopId: ShopId) {
         this.shopId = shopId;
     }

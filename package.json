@@ -3,6 +3,9 @@
     "test": "jest --verbose"
   },
   "dependencies": {
+    "class-transformer": "^0.5.1",
+    "@eventstore/db-client": "^3.3.1",
+    "dotenv": "^16.0.1",
     "ts-loader": "^9.3.1",
     "ts-node": "^10.8.1",
     "tsconfig-paths": "^4.0.0",

@@ -1,8 +1,15 @@
-import {DomainEvent, ShopUrlUpdatedEvent, SynchronizationAggregate} from "./SynchronizationAggregate";
-import {EventStore, PubSub} from "./PubSub";
+import {
+    DomainEvent,
+    ShopDataRequestedEvent,
+    ShopUrlUpdatedEvent,
+    SynchronizationAggregate
+} from "./SynchronizationAggregate";
+import {EventStore, PubSub, RealEventStore} from "./PubSub";
 import {ShopAdminHandler} from "./Projections";
 import { mock } from 'jest-mock-extended';
 import {SynchronizationCommandHandler} from "./SynchronizationCommandHandler";
+import * as dotenv from 'dotenv';
+import {randomUUID} from "crypto";
 
 describe("pubsub", () => {
     let eventStore;
@@ -35,6 +42,41 @@ describe("pubsub", () => {
 
         expect(handler.handleEvent).toBeCalledTimes(1);
         expect(handler.handleEvent).toBeCalledWith(event);
+    })
+})
+
+describe("realEventStore e2e", () => {
+
+    let envBackup = process.env;
+    let eventStore: RealEventStore;
+    const shopId = `nbouerf`
+
+    beforeAll(() => {
+        dotenv.config( { path: '.env'})
+        eventStore = new RealEventStore();
+    })
+
+    afterAll(() => {
+        process.env = envBackup;
+    })
+
+    afterEach(() => {
+        eventStore.clean(shopId);
+    })
+
+    it("Should return all events", async () => {
+        const eventsToStore = [
+            new ShopUrlUpdatedEvent(shopId, "http://gnierf.de"),
+            new ShopDataRequestedEvent(shopId),
+        ]
+
+        for (const e of eventsToStore) {
+            await eventStore.store(e);
+        }
+
+        const events = await eventStore.getById(shopId);
+
+        expect(events.map((it) => it.event.data)).toEqual(eventsToStore);
     })
 })
 

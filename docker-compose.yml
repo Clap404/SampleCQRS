@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  eventstore:
+    image: ghcr.io/eventstore/eventstore:21.10.5-buster-slim # or 21.10.1-alpha-arm64v8
+    env_file: .env
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:2113/stats || exit 1']
+      interval: 5s
+      timeout: 2s
+    ports:
+      - '2113:2113'
+      - '1113:1113'
+    volumes:
+      - eventstore_data:/var/lib/eventstore
+
+volumes:
+  eventstore_data:
