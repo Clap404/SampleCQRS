@@ -1,11 +1,13 @@
-import {PubSub} from "./PubSub";
+import {AppendExpectedRevision} from "@eventstore/db-client";
+import {Exclude} from "class-transformer";
 
-export abstract class DomainEvent{
-    constructor(shopId: ShopId) {
-        this.shopId = shopId;
+export abstract class DomainEvent {
+    @Exclude()
+    sequenceNumber: AppendExpectedRevision
+
+    constructor(public shopId: ShopId, sequenceNumber: AppendExpectedRevision) {
+        this.sequenceNumber = sequenceNumber
     }
-
-    shopId: ShopId;
 }
 
 export class ShopDataReceivedEvent extends DomainEvent {
@@ -21,21 +23,15 @@ export class BadShopIdDataReceivedEvent extends DomainEvent {
 }
 
 export class ShopUrlUpdatedEvent extends DomainEvent {
-    constructor(shopId: ShopId, url: string) {
-        super(shopId);
-        this.url = url;
+    constructor(shopId: ShopId, sequenceNumber: AppendExpectedRevision, public url: string) {
+        super(shopId, sequenceNumber);
     }
-
-    url: string;
 }
 
 export class ShopNameUpdatedEvent extends DomainEvent {
-    constructor(shopId: ShopId, name: string) {
-        super(shopId);
-        this.name = name;
+    constructor(shopId: ShopId, sequenceNumber: AppendExpectedRevision, public name: string) {
+        super(shopId, sequenceNumber);
     }
-
-    name: string;
 }
 
 enum RequestState {
@@ -46,7 +42,8 @@ enum RequestState {
 export class SynchronizationAggregate {
 
     state = {
-        requestState: null
+        requestState: null,
+        sequenceNumber: null
     };
 
     constructor(private shopId: ShopId, history?) {
@@ -54,6 +51,8 @@ export class SynchronizationAggregate {
     }
 
     apply(event: DomainEvent) {
+        this.state.sequenceNumber = event.sequenceNumber;
+        // we could check the sequence number as we re-hydrate the aggregate here
         switch (event.constructor.name) {
             case "ShopDataRequestedEvent" :
                 this.state.requestState = RequestState.Requested;
@@ -70,7 +69,7 @@ export class SynchronizationAggregate {
 
     requestData(shopId: string): ShopDataRequestedEvent {
         console.log(`Command : requestData for ${shopId}`)
-        const event = new ShopDataRequestedEvent(shopId);
+        const event = new ShopDataRequestedEvent(shopId, this.state.sequenceNumber);
         this.apply(event)
         return event;
     }
@@ -79,11 +78,11 @@ export class SynchronizationAggregate {
         console.log(`Command : receiveData for ${shopData.shopId}`)
         let event: DomainEvent;
         if (shopData.shopId !== this.shopId) {
-            event = new BadShopIdDataReceivedEvent(shopData.shopId);
+            event = new BadShopIdDataReceivedEvent(shopData.shopId, this.state.sequenceNumber);
         } else if (this.state.requestState === RequestState.Requested) {
-            event = new ShopDataReceivedEvent(shopData.shopId);
+            event = new ShopDataReceivedEvent(shopData.shopId, this.state.sequenceNumber);
         } else if (this.state.requestState === RequestState.Received) {
-            event = new ShopDataAlreadyReceivedEvent(shopData.shopId);
+            event = new ShopDataAlreadyReceivedEvent(shopData.shopId, this.state.sequenceNumber);
         }
         this.apply(event);
         return event;
@@ -91,7 +90,7 @@ export class SynchronizationAggregate {
 
     updateUrl(shopId: ShopId, url: string): any {
         console.log(`Command : updateUrl for ${shopId}`)
-        const event = new ShopUrlUpdatedEvent(shopId, url);
+        const event = new ShopUrlUpdatedEvent(shopId, this.state.sequenceNumber, url);
         this.apply(event);
         return event;
     }

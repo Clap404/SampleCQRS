@@ -5,6 +5,7 @@ import {
     ShopDataReceivedEvent,
     SynchronizationAggregate, ShopDataAlreadyReceivedEvent
 } from "./SynchronizationAggregate";
+import {NO_STREAM} from "@eventstore/db-client";
 
 describe('synchronisation', () => {
     it('should raise DataIsRequested when request data', () => {
@@ -23,7 +24,7 @@ describe('synchronisation', () => {
             contents : "ZeData"
         } ;
 
-        const history = [new ShopDataRequestedEvent(shopData.shopId)];
+        const history = [new ShopDataRequestedEvent(shopData.shopId, NO_STREAM)];
 
         const synchronization: SynchronizationAggregate = new SynchronizationAggregate(shopData.shopId, history);
 
@@ -53,7 +54,7 @@ describe('synchronisation', () => {
             contents : "ZeData"
         } ;
 
-        const history = [new ShopDataRequestedEvent(shopData.shopId), new ShopDataReceivedEvent(shopData.shopId)];
+        const history = [new ShopDataRequestedEvent(shopData.shopId, NO_STREAM), new ShopDataReceivedEvent(shopData.shopId, NO_STREAM)];
 
         const synchronization: SynchronizationAggregate = new SynchronizationAggregate(shopData.shopId, history);
 

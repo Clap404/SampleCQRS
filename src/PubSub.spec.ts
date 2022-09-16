@@ -10,9 +10,12 @@ import { mock } from 'jest-mock-extended';
 import {SynchronizationCommandHandler} from "./SynchronizationCommandHandler";
 import * as dotenv from 'dotenv';
 import {randomUUID} from "crypto";
+import {AppendExpectedRevision, NO_STREAM, STREAM_EXISTS} from "@eventstore/db-client";
 
 describe("pubsub", () => {
     let eventStore;
+
+    const dummySequence = STREAM_EXISTS
 
     beforeEach(() => {
         eventStore = new EventStore();
@@ -23,7 +26,7 @@ describe("pubsub", () => {
         const url = "https://gaagle.fr"
 
         const pubsub = new PubSub(eventStore);
-        const event = new ShopUrlUpdatedEvent(shopId, url);
+        const event = new ShopUrlUpdatedEvent(shopId,dummySequence ,url);
         pubsub.publish(event);
 
         expect(eventStore.getById(shopId)).toEqual([event]);
@@ -37,7 +40,7 @@ describe("pubsub", () => {
         const pubsub = new PubSub(eventStore);
         pubsub.subscribe(handler);
 
-        const event = new ShopUrlUpdatedEvent(shopId, url);
+        const event = new ShopUrlUpdatedEvent(shopId, dummySequence,url);
         pubsub.publish(event);
 
         expect(handler.handleEvent).toBeCalledTimes(1);
@@ -60,14 +63,14 @@ describe("realEventStore e2e", () => {
         process.env = envBackup;
     })
 
-    afterEach(() => {
-        eventStore.clean(shopId);
+    afterEach(async () => {
+        await eventStore.clean(shopId);
     })
 
     it("Should return all events", async () => {
         const eventsToStore = [
-            new ShopUrlUpdatedEvent(shopId, "http://gnierf.de"),
-            new ShopDataRequestedEvent(shopId),
+            new ShopUrlUpdatedEvent(shopId, NO_STREAM,"http://gnierf.de"),
+            new ShopDataRequestedEvent(shopId, STREAM_EXISTS),
         ]
 
         for (const e of eventsToStore) {
@@ -76,7 +79,23 @@ describe("realEventStore e2e", () => {
 
         const events = await eventStore.getById(shopId);
 
-        expect(events.map((it) => it.event.data)).toEqual(eventsToStore);
+        expect(events.length).toBe(2);
+        //expect(events.map((it) => it.event.data)).toEqual(eventsToStore);
+    })
+
+    it("Should throw when storing an event with an already exisint sequence id", async () => {
+
+        const event1 = new ShopUrlUpdatedEvent(shopId, NO_STREAM,"http://gnierf.de")
+        const nextSequenceNumber = await eventStore.store(event1)
+
+        const event2 = new ShopDataRequestedEvent(shopId, nextSequenceNumber)
+        const event2Again = new ShopDataRequestedEvent(shopId, nextSequenceNumber)
+        await eventStore.store(event2)
+        await eventStore.store(event2Again)
+
+        const events = await eventStore.getById(shopId);
+
+        expect(events.map((it) => it.event.data.shopId)).toEqual([event1, event2].map(it => it.shopId));
     })
 })
 
